@@ -66,6 +66,18 @@ export interface IRoleListState {
     bulkAction: IBulkActionType;
   // show deleted roles
     showDeleted: boolean;
+  // show published roles
+    showPublished: boolean;
+  // show Internal role type
+    showInternal: boolean;
+  // show Exernal role type
+    showExternal: boolean;
+  // show Internal or External role type
+    showInternalExternal: boolean;
+  // show Internal , External or Anonymous role type
+    showInternalExternalAnonymous: boolean;
+  // show Anonymous role type
+    showAnonymous: boolean;
   // Callback action
     callBackAction?(callback: any): void;
 }

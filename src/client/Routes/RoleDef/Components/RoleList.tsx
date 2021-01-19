@@ -17,6 +17,7 @@ import {
   Icon,
   Table,
   TextField,
+  Label,
 } from 'engage-ui';
 
 import {
@@ -27,7 +28,7 @@ import {
   hasRolesDefs,
 } from '../../../Common/Utilities';
 
-import { IBulkActionTypeAction, IRoleListState } from './RoleListState';
+import { IRoleListState } from './RoleListState';
 import { IRoleListProp } from './RoleListProp';
 import { ROLE } from '../../../ThemeIdentifiers';
 
@@ -120,7 +121,6 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       appDefId: 0,
       bulkAction: {
         selectedRow: [],
-        // actions: [],
       },
       callBackAction: undefined,
       callChildCallback: false,
@@ -135,6 +135,12 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       loadingRole: false,
       nestedChildData: [],
       showDeleted: false,
+      showPublished: true,
+      showInternalExternal: true,
+      showExternal: true,
+      showInternalExternalAnonymous: true,
+      showInternal: true,
+      showAnonymous: true,
     };
   }
 
@@ -144,8 +150,10 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       from : 0, size : 20,
       query: {
         bool : {
-          must : [
-            {term: {'entityState.itemID': 5}},
+          must: [
+            {
+              terms: {'entityState.itemID': [5]},
+            },
           ],
         },
       },
@@ -187,28 +195,70 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
     return ;
   }
 
-  // Show deleted Roles
-  onShowDeleted = (val: boolean) => {
-    this.setState({showDeleted: val});
+  // query builder
+  roleDefQueryBuilder(): {} {
+    const { showInternal, showExternal, showDeleted, showPublished, showAnonymous, showInternalExternal, showInternalExternalAnonymous, filterConfig } = this.state;
+    let statusIDs = [showPublished && 5, showDeleted && 7];
+    let typeIDs = [showAnonymous && 4, showInternalExternal && 3, showInternal && 1, showExternal && 2, showInternalExternalAnonymous && 7];
+    const must: Array<{}> = [];
+    const filterQuery: {} = {};
+    let filter: {} = {};
+    statusIDs = statusIDs.filter((v) => Number.isInteger(v));
+    typeIDs = typeIDs.filter((v) => Number.isInteger(v));
+    if (statusIDs.length > 0) {
+      must.push({
+        terms: {'entityState.itemID': statusIDs},
+     });
+    }
+    if (typeIDs.length > 0) {
+      must.push({
+        terms: {'allowedMemberTypes.itemID': typeIDs},
+     });
+    }
+    if (filterConfig.searchKey) {
+      filter = {
+        query_string: {
+          query: `*${filterConfig.searchKey}*`,
+          fields: [filterConfig.field],
+        },
+      };
+      filterQuery['filter'] = filter;
+    }
+    filterQuery['must'] = must;
+    console.log(filterQuery);
+    return filterQuery;
+  }
+  // Set Role Def filters
+  onFilterRoleDefs = (val: boolean, field: string) => {
+    const state = {[field]: val};
+    this.setState(prev => ({...prev, ...state}));
+  }
+
+  // Apply Role Defs filter
+  onApplyFilter(clear?: boolean) {
+    if (clear) {
+      this.setState({ showInternal: false, showExternal: false, showDeleted: false, showPublished: false, showAnonymous: false, showInternalExternal: false, showInternalExternalAnonymous: false});
+    }
     this.loadRoleDefs({
       from : 0, size : 20,
       query: {
-        bool : val ? {
-          should : [
-            {term: {'entityState.itemID': 5}},
-            val && {term: {'entityState.itemID': 7}},
-          ],
-        } : {
-          must : [
-            {term: {'entityState.itemID': 5}},
-          ],
-        },
-      },
+          bool : this.roleDefQueryBuilder(),
+    },
     });
+    this.setState(prev => ({dropdownEle: {...prev.dropdownEle, ['filter']: null },
+    }));
   }
+
   // called when search in text field value changes
-  onSearchInputChange = (value: string, e: React.FormEvent<HTMLElement>) => {
-    this.debounceSearch(() => this.setState(prevState => ({filterConfig: {...prevState.filterConfig, searchKey: value, search: value.length >= 3}})));
+  onSearchInputChange = (value: string) => {
+    this.debounceSearch(() => this.setState(prevState => ({filterConfig: {...prevState.filterConfig, searchKey: value}}),
+    () => {
+    this.loadRoleDefs({
+      from : 0, size : 20,
+      query: {
+          bool : this.roleDefQueryBuilder(),
+    },
+    }); }));
   }
   // search debounce
   debounceSearch(callback: () => void, duration: number = 1000) {
@@ -240,7 +290,17 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       <FlexBox justify="Center">
         <Column medium="4-4">
           <div className={theme.pageContainer}>
-            <Heading element="h2" theme={CommonStyle}>Roles</Heading>
+            <Heading element="h2" theme={CommonStyle}>Roles
+              <Button
+                componentSize="large"
+                componentStyle={{marginLeft: '20px'}}
+                primary={true}
+                onClick={(event: React.FormEvent<HTMLElement>) => this.toggleDropdown(event, 'bulkAction')}
+                disabled={loadingRole}
+              >
+              <Label>Add New Role</Label>
+              </Button>
+            </Heading>
 
             <FlexBox
               direction="Row"
@@ -264,7 +324,6 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
                   preferredAlignment="left"
                 />
               </div>
-
               <div className={searchFieldStyle}>
                 <TextField
                   disabled = {!hasRolesDefs(roleDefs)}
@@ -279,13 +338,14 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
                 <Button
                   disabled={actionInProgress}
                   componentSize="large"
-                  icon="horizontalDots"
+                  icon="filter"
                   onClick={(event: React.FormEvent<HTMLElement>) => this.toggleDropdown(event, 'filter')}
                 />
 
                 <Dropdown
                   dropdownItems={this.bulkOptions()}
                   anchorEl={dropdownEle.filter}
+                  closeOnClickOption = {false}
                   preferredAlignment="right"
                 />
               </div>
@@ -311,7 +371,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
             }
             {
             loadingRole &&
-              <div className={theme.spinnerContainer} style={!hasRolesDefs(roleDefs) ? {marginTop: '150px'} : {}}>
+              <div className={theme.spinnerContainer}>
                 <DrawerSpinner componentClass={theme.espinner} spinnerText="Loading Roles"  />
               </div>
           }
@@ -323,9 +383,85 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
 
   // function needs to be called on onChange for checkBox
   private bulkOptions = () => {
-    return [{
-      content: <Checkbox label={'Show Deleted'} checked={this.state.showDeleted} onChange={this.onShowDeleted}/>,
-    }];
+    const {theme} = this.props;
+    const {loadingRole, showInternal, showExternal, showDeleted, showPublished, showAnonymous, showInternalExternal, showInternalExternalAnonymous} = this.state;
+    return [
+      {
+        content: <Label>Status</Label>,
+      },
+      {
+        divider: true,
+        content:  (
+        <FlexBox><Column>
+        <FlexBox
+          direction="Row"
+          align="Start"
+          justify="Start"
+        >
+        <Column small="2-4"><div className={theme.commonLeftMargin}><Checkbox label={'Show Published'} checked={showPublished} onChange={(val: boolean) => this.onFilterRoleDefs(val, 'showPublished')}/>
+        </div></Column>
+        <Column small="2-4"><div className={theme.commonLeftMargin}><Checkbox label={'Show Deleted'} checked={showDeleted} onChange={(val: boolean) => this.onFilterRoleDefs(val, 'showDeleted')}/>
+        </div></Column>
+        </FlexBox>
+      </Column>
+      </FlexBox>),
+      },
+      {
+        content: <Label>Role Type</Label>,
+      },
+      {
+        divider: true,
+        content: (
+        <FlexBox><Column><FlexBox
+          direction="Row"
+          align="Start"
+          justify="Start"
+        >
+        <Column small="2-4"><div className={theme.commonLeftMargin}><Checkbox label={'Internal or External'} checked={showInternalExternal} onChange={(val: boolean) => this.onFilterRoleDefs(val, 'showInternalExternal')}/></div></Column>
+        <Column small="2-4"><div className={theme.commonLeftMargin}><Checkbox label={'Internal'} checked={showExternal} onChange={(val: boolean) => this.onFilterRoleDefs(val, 'showExternal')}/></div></Column>
+        <Column small="2-4"><div className={theme.commonLeftMargin}><Checkbox label={'Internal, External or Anonymous'} checked={showInternalExternalAnonymous} onChange={(val: boolean) => this.onFilterRoleDefs(val, 'showInternalExternalAnonymous')}/>
+        </div></Column>
+        </FlexBox>
+        <FlexBox
+          direction="Row"
+          align="Start"
+          justify="Start"
+        >
+        <Column small="2-4"><div className={theme.commonLeftMargin}><Checkbox label={'Internal'} checked={showInternal} onChange={(val: boolean) => this.onFilterRoleDefs(val, 'showInternal')}/></div></Column>
+        <Column small="2-4"><div className={theme.commonLeftMargin}><Checkbox label={'Anonymous'} checked={showAnonymous} onChange={(val: boolean) => this.onFilterRoleDefs(val, 'showAnonymous')}/></div></Column>
+        </FlexBox></Column></FlexBox>
+        ),
+      },
+      {
+        content:  (
+        <FlexBox
+          direction="Row"
+          align="Center"
+          justify="SpaceBetween"
+        >
+        <Column small="2-4"><div className={theme.commonLeftMargin}>
+          <Button
+                componentSize="small"
+                primary={true}
+                onClick={() => this.onApplyFilter(true)}
+                disabled={loadingRole}
+          >
+              <Label>Clear</Label>
+          </Button>
+        </div></Column>
+        <Column small="2-4"><div className={theme.commonLeftMargin}>
+          <Button
+                componentSize="small"
+                primary={true}
+                onClick={() => this.onApplyFilter()}
+                disabled={loadingRole}
+          >
+              <Label>Apply</Label>
+          </Button>
+        </div></Column>
+        </FlexBox>),
+      },
+  ];
   }
 }
 

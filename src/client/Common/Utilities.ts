@@ -1,4 +1,4 @@
-import { ICommonEnumInterface } from '../Types/Domain';
+import { ICommonEnumInterface, IRoleDef } from '../Types/Domain';
 
 // return allowedMemberTypes type
 export const getAllowedMemberType = (currentEntityMember?: ICommonEnumInterface) => {
@@ -38,3 +38,4 @@ export const getStatus = (value: any): string => {
 };
 
 export const checkIFDeleted = (value: ICommonEnumInterface): boolean =>  value.itemID === 7;
+export const hasRolesDefs = (value: IRoleDef[]): boolean =>  value.length > 0;

@@ -24,6 +24,7 @@ import {
   getAllowedMemberType,
   getBadgeStatus,
   getStatus,
+  hasRolesDefs,
 } from '../../../Common/Utilities';
 
 import { IBulkActionTypeAction, IRoleListState } from './RoleListState';
@@ -236,7 +237,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
     );
 
     return (
-      <FlexBox>
+      <FlexBox justify="Center">
         <Column medium="4-4">
           <div className={theme.pageContainer}>
             <Heading element="h2" theme={CommonStyle}>Roles</Heading>
@@ -266,7 +267,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
 
               <div className={searchFieldStyle}>
                 <TextField
-                  disabled = {roleDefs.length < 1}
+                  disabled = {!hasRolesDefs(roleDefs)}
                   label="Find a Role..."
                   suffix={<Icon source="search" componentColor="inkLighter" onClick={this.filterRoleDefs}/>}
                   value={filterConfig.searchKey}
@@ -288,14 +289,9 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
                   preferredAlignment="right"
                 />
               </div>
-            </FlexBox> {
-            loadingRole &&
-              <div className={theme.spinnerContainer}>
-                <DrawerSpinner componentClass={theme.espinner} spinnerText="Loading Roles"  />
-              </div>
-          }
+            </FlexBox>
             {
-              roleDefs ?
+              roleDefs &&
                 <Table
                   actionInProgress={actionInProgress}
                   columnFirstChildWidth="25px"
@@ -311,8 +307,14 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
                   selectRow="checkbox"
                   selectRowCallback={this.handleSelectRowCallback}
                   theme={TableStyle}
-                /> : null
+                />
             }
+            {
+            loadingRole &&
+              <div className={theme.spinnerContainer} style={!hasRolesDefs(roleDefs) ? {marginTop: '150px'} : {}}>
+                <DrawerSpinner componentClass={theme.espinner} spinnerText="Loading Roles"  />
+              </div>
+          }
           </div>
         </Column>
       </FlexBox>

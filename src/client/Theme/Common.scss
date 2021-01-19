@@ -165,15 +165,68 @@ body {
 }
 
 .spinnerContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: absolute;
-  background: #FFF;
+  background: transparent;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 100;
 }
-
+.spinnerContainer > div > div {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.spinnerContainer > div > div > svg:first-child {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+  position: absolute;
+  animation: lds-spinner-anti-clockwise 3s infinite;
+}
+.spinnerContainer > div > div > svg:last-of-type {
+  animation: lds-spinner-clockwise 1.5s infinite;
+}
+.spinnerContainer > div > div > small {
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 0 5px;
+  margin: 4px;
+}
+@keyframes lds-spinner-clockwise {
+  0% {
+    transform: rotate(0);
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  }
+  50% {
+    transform: rotate(900deg);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  100% {
+    transform: rotate(1800deg);
+  }
+}
+@keyframes lds-spinner-anti-clockwise {
+  0% {
+    transform: rotate(0);
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  }
+  50% {
+    transform: rotate(-900deg);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  100% {
+    transform: rotate(-1800deg);
+  }
+}
 .tableActions {
   margin-top: 18px;
 }

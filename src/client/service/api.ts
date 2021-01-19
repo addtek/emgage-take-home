@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosStatic, CancelTokenSource } from 'axios';
+import axios, { AxiosInstance, AxiosResponse, CancelTokenSource } from 'axios';
 /**
  * Custom HTTP request client
  */
@@ -24,14 +24,37 @@ export default class API {
     logError(error: any) {
         console.warn(error);
     }
+
     /**
-     * Get Roles from Sever
+     * Get Roles Definitions
      * @param success
      * called when http request resolves without errors
      * @param error
      * called when an error occurs during the http call
      */
-    public getRoleList(params = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError) {
-     this.http.get('searchRoles',{params}).then(success, error);
+    public getRoleList(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError) {
+     this.http.get('searchRoles', {params}).then(success, error);
+    }
+
+    /**
+     * Update Roles Definiton
+     * @param success
+     * called when http request resolves without errors
+     * @param error
+     * called when an error occurs during the http call
+     */
+    public updateRoleDef(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError) {
+        this.http.post(`updateRole`, params).then(success, error);
+    }
+
+    /**
+     * Update Roles Definiton
+     * @param success
+     * called when http request resolves without errors
+     * @param error
+     * called when an error occurs during the http call
+     */
+    public deleteRoleDef(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError) {
+        this.http.post(`deleteRole`, params).then(success, error);
     }
 }

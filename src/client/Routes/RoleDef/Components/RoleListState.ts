@@ -16,7 +16,7 @@ export interface IBulkActionTypeAction {
 }
 interface IBulkActionType {
   selectedRow: Array<number | string>;
-  // actions: IBulkActionTypeAction[];
+  action: string;
 }
 
 interface IFilterType {
@@ -29,6 +29,11 @@ interface IDropdownType {
   bulkAction?: HTMLElement;
   filter?: HTMLElement;
   [key: string]: HTMLElement;
+}
+interface IModalContent {
+  Header?: React.ReactNode | React.ReactNode;
+  Footer?: React.ReactNode | React.ReactNode;
+  Content: HTMLElement | React.ReactNode;
 }
 
 interface IHideRowType {
@@ -78,6 +83,10 @@ export interface IRoleListState {
     showInternalExternalAnonymous: boolean;
   // show Anonymous role type
     showAnonymous: boolean;
+  // modal active
+    showModal: boolean;
+  // Modal content
+    modalContent: IModalContent;
   // Callback action
     callBackAction?(callback: any): void;
 }

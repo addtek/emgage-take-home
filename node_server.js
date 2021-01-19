@@ -1,18 +1,9 @@
-const fs = require('fs');
-
 const express = require('express');
 const app = express();
 const bodyParser = require("body-parser");
 const path = require('path');
-const elasticsearch = require('elasticsearch')
 const cors = require('cors')
-
-// Set up Elastic Search Client
-const bonsai_url = process.env.BONSAI_URL;
-const client = new elasticsearch.Client({
-  host: bonsai_url,
-  log: 'trace'
-});
+const roleDefController = require('./src/server/controller/RoleDefRequestHandler')
 
 // serve static files from public directory
 const rootDir = path.resolve(__dirname);
@@ -34,25 +25,9 @@ function fetch_fn(req, res, next) {
   }
 }
 
-function searchRoles(req, res, next) {
-  try {
-    {
-      const {from, size, query} = req.query;
-      client.search({
-        body: query && {query: JSON.parse(query)},
-        from,
-        size,
-        index: 'roledefs'
-      })
-        .then((e) => { res.json(e)})
-        .catch((c) => {console.log(c); res.json(c)});
-    }
-  } catch (err) {
-    console.log(err.message);
-  }
-}
-
-app.get('/searchRoles', function (req, res, next) { searchRoles(req, res, next); });
+app.get('/searchRoles', roleDefController.searchRoles);
+app.post('/updateRole', roleDefController.updateRole);
+app.post('/deleteRole', roleDefController.deleteRole);
 app.get('/*', function (req, res, next) { fetch_fn(req, res, next); });
 
 var listenPort = process.env.PORT || 3000

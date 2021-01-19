@@ -36,6 +36,4 @@ export const getStatus = (value: any): string => {
     return value.locked.itemName;
   }
 };
-
-export const checkIFDeleted = (value: ICommonEnumInterface): boolean =>  value.itemID === 7;
-export const hasRolesDefs = (value: IRoleDef[]): boolean =>  value.length > 0;
+export const arrayNotEmpty = (value: any[]): boolean =>  value.length > 0;

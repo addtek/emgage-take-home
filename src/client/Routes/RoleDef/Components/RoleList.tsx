@@ -18,14 +18,18 @@ import {
   Table,
   TextField,
   Label,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalContent,
 } from 'engage-ui';
 
 import {
-  checkIFDeleted,
   getAllowedMemberType,
   getBadgeStatus,
   getStatus,
-  hasRolesDefs,
+  arrayNotEmpty,
 } from '../../../Common/Utilities';
 
 import { IRoleListState } from './RoleListState';
@@ -101,7 +105,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       disabled: false,
       divider: true,
       header: false,
-      onClick: () => this.applyAction('edit'),
+      onClick: () => this.setBulkAction('edit'),
     },
     {
       componentId: 'delete',
@@ -110,7 +114,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       disabled: false,
       divider: true,
       header: false,
-      onClick: () => this.applyAction('delete'),
+      onClick: () => this.setBulkAction('delete'),
     },
   ];
   constructor(props: IRoleListProp) {
@@ -121,6 +125,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       appDefId: 0,
       bulkAction: {
         selectedRow: [],
+        action: null,
       },
       callBackAction: undefined,
       callChildCallback: false,
@@ -141,33 +146,26 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       showInternalExternalAnonymous: true,
       showInternal: true,
       showAnonymous: true,
+      showModal: false,
+      modalContent: {
+        Content: null,
+      },
     };
   }
 
   // Perform initial action after component has been loaded into the DOM
   componentDidMount() {
-    this.loadRoleDefs({
-      from : 0, size : 20,
-      query: {
-        bool : {
-          must: [
-            {
-              terms: {'entityState.itemID': [5]},
-            },
-          ],
-        },
-      },
-    });
+    this.loadRoleDefs(this.roleDefSearchQueryBuilder());
   }
   // make api call
   loadRoleDefs(query: {}) {
-    this.toggleLoading();
     API.getRoleList(query, this.onGotRoleDefs, this.onGetRoleDefsError);
+    this.toggleLoading();
   }
   // Callback function for updating roleDefs
   onGotRoleDefs = (res: AxiosResponse<any>) => {
-    this.toggleLoading();
     this.props.initRoleList(res.data.hits.hits.map((role) => role._source));
+    this.toggleLoading();
   }
   // Callback function for updating roleDefs
   onGetRoleDefsError = (reason: any) => {
@@ -188,15 +186,42 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
   }
 
   // set select rows state
-  selectedRowsState = (rows: Array<number | string>) => this.setState(prevState => ({bulkAction: {...prevState.bulkAction, selectedRow: rows}}));
+  selectedRowsState = (rows: Array<number | string>) => this.setState(prevState => ({bulkAction: {...prevState.bulkAction, selectedRow: rows, action: !arrayNotEmpty(rows) ? null : prevState.bulkAction.action}}));
 
   // Apply bulk action
-  applyAction = (actionType: string) => {
-    return ;
+  setBulkAction = (actionType: string) => {
+    this.setState(prev => ({bulkAction: {...prev.bulkAction, action: actionType}})) ;
   }
 
+  // Apply Bulk action
+  applyBulkAction = () => {
+    this.setState({
+      showModal: true,
+      modalContent: {
+        Header: (
+          <FlexBox direction="Row" justify="Start">
+          <Column small="1-2">
+            <Icon source="alert" componentColor="red"/>
+          </Column>
+          <Column large="2-6"><Label>Warning</Label></Column>
+          </FlexBox>),
+        Content: (
+        <Column large="4-6">
+          <FlexBox direction="Row" justify="Center">
+            <Column large="6-6"><Label>Are You sure you want to delete this Role Definiton? this action is not reversible!</Label></Column>
+          </FlexBox>
+        </Column>),
+        Footer: (
+          <FlexBox direction="Row" justify="SpaceBetween">
+            <Button componentSize="slim">Cancel</Button>
+            <Button componentSize="slim">Delete</Button>
+          </FlexBox>
+        ),
+      },
+    });
+  }
   // query builder
-  roleDefQueryBuilder(): {} {
+  roleDefSearchQueryBuilder(): {} {
     const { showInternal, showExternal, showDeleted, showPublished, showAnonymous, showInternalExternal, showInternalExternalAnonymous, filterConfig } = this.state;
     let statusIDs = [showPublished && 5, showDeleted && 7];
     let typeIDs = [showAnonymous && 4, showInternalExternal && 3, showInternal && 1, showExternal && 2, showInternalExternalAnonymous && 7];
@@ -225,8 +250,9 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       filterQuery['filter'] = filter;
     }
     filterQuery['must'] = must;
-    console.log(filterQuery);
-    return filterQuery;
+    return {
+      from : 0, size : 20,
+      query: { bool: filterQuery}};
   }
   // Set Role Def filters
   onFilterRoleDefs = (val: boolean, field: string) => {
@@ -239,12 +265,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
     if (clear) {
       this.setState({ showInternal: false, showExternal: false, showDeleted: false, showPublished: false, showAnonymous: false, showInternalExternal: false, showInternalExternalAnonymous: false});
     }
-    this.loadRoleDefs({
-      from : 0, size : 20,
-      query: {
-          bool : this.roleDefQueryBuilder(),
-    },
-    });
+    this.loadRoleDefs(this.roleDefSearchQueryBuilder());
     this.setState(prev => ({dropdownEle: {...prev.dropdownEle, ['filter']: null },
     }));
   }
@@ -253,29 +274,52 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
   onSearchInputChange = (value: string) => {
     this.debounceSearch(() => this.setState(prevState => ({filterConfig: {...prevState.filterConfig, searchKey: value}}),
     () => {
-    this.loadRoleDefs({
-      from : 0, size : 20,
-      query: {
-          bool : this.roleDefQueryBuilder(),
-    },
-    }); }));
-  }
-  // search debounce
-  debounceSearch(callback: () => void, duration: number = 1000) {
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(callback, duration);
-  }
-  // on search icon clicked
-  filterRoleDefs = () => {
-    this.setState(prevState => ({filterConfig: {...prevState.filterConfig, search: prevState.filterConfig.searchKey.length >= 3}}));
+        const {searchKey} = this.state.filterConfig;
+        if (searchKey.length >= 3 || !searchKey.length) {
+        this.loadRoleDefs(this.roleDefSearchQueryBuilder());
+        }
+      }));
   }
 
+  // search debounce
+  debounceSearch(callback: () => void, duration?: number) {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(callback, duration ? duration : 1000);
+  }
+
+  // Close Modal
+  closeModal = () => this.setState({modalContent: {Content: null}, showModal: false});
+
+  // Action Query Builder
+  bulkActionQueryBuilder = () => {
+    // TODO: Complete this function
+    API.updateRoleDef(
+      {
+        script : {
+          source: '_ctx._source.entityState = params',
+          params: {
+            itemID: 5,
+            itemName: 'Published',
+            enumURI: 'EntityState',
+            itemDescription: null,
+            itemURI: 'Published',
+          },
+        },
+      },
+      () => null,
+    );
+  }
+
+  // Delete Role
+  deleteRoleDef() {
+    API.deleteRoleDef(this.state.bulkAction.selectedRow, () => null);
+  }
   /**
    * Render the component to the DOM
    * @returns {}
    */
   render() {
-    const { actionInProgress, bulkAction, dropdownEle, filterConfig, hideRow, loadingRole, showDeleted } = this.state;
+    const { actionInProgress, showModal, modalContent, bulkAction, dropdownEle, filterConfig, hideRow, loadingRole, showDeleted } = this.state;
     const {
       roleDefs,
       theme,
@@ -292,10 +336,10 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
           <div className={theme.pageContainer}>
             <Heading element="h2" theme={CommonStyle}>Roles
               <Button
-                componentSize="large"
+                componentSize="slim"
                 componentStyle={{marginLeft: '20px'}}
                 primary={true}
-                onClick={(event: React.FormEvent<HTMLElement>) => this.toggleDropdown(event, 'bulkAction')}
+                onClick={() => null}
                 disabled={loadingRole}
               >
               <Label>Add New Role</Label>
@@ -313,9 +357,9 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
                   componentSize="large"
                   disclosure={true}
                   onClick={(event: React.FormEvent<HTMLElement>) => this.toggleDropdown(event, 'bulkAction')}
-                  disabled={!bulkAction.selectedRow.length}
+                  disabled={!arrayNotEmpty(bulkAction.selectedRow)}
                 >
-                  Bulk Actions {bulkAction.selectedRow.length ? `(${bulkAction.selectedRow.length})` : ''}
+                  {bulkAction.action && arrayNotEmpty(bulkAction.selectedRow) ? bulkAction.action.toUpperCase() : 'Bulk Actions'} {arrayNotEmpty(bulkAction.selectedRow) ? `(${bulkAction.selectedRow.length})` : ''}
                 </Button>
 
                 <Dropdown
@@ -323,12 +367,35 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
                   anchorEl={dropdownEle.bulkAction}
                   preferredAlignment="left"
                 />
+                <Button
+                  componentSize="large"
+                  componentStyle={{marginLeft: '5px'}}
+                  onClick={this.applyBulkAction}
+                  disabled={!arrayNotEmpty(bulkAction.selectedRow) || !bulkAction.action}
+                >
+                  <Label>Apply</Label>
+                </Button>
+                <Modal
+                  active ={showModal}
+                  componentWidth = "small"
+                  closeOnBackgroud={true}
+                  closeOnEsc={true}
+                  toggle={this.closeModal}
+                >
+                  <ModalBody>
+                    <ModalHeader>{modalContent.Header}</ModalHeader>
+                    <ModalContent active ={showModal}>
+                      {modalContent.Content}
+                    </ModalContent>
+                    <ModalFooter>{modalContent.Footer}</ModalFooter>
+                  </ModalBody>
+                </Modal>
               </div>
               <div className={searchFieldStyle}>
                 <TextField
-                  disabled = {!hasRolesDefs(roleDefs)}
+                  disabled = {!arrayNotEmpty(roleDefs)}
                   label="Find a Role..."
-                  suffix={<Icon source="search" componentColor="inkLighter" onClick={this.filterRoleDefs}/>}
+                  suffix={<Icon source="search" componentColor="inkLighter"/>}
                   value={filterConfig.searchKey}
                   onChange={this.onSearchInputChange}
                 />
@@ -441,7 +508,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
         >
         <Column small="2-4"><div className={theme.commonLeftMargin}>
           <Button
-                componentSize="small"
+                componentSize="slim"
                 primary={true}
                 onClick={() => this.onApplyFilter(true)}
                 disabled={loadingRole}
@@ -451,7 +518,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
         </div></Column>
         <Column small="2-4"><div className={theme.commonLeftMargin}>
           <Button
-                componentSize="small"
+                componentSize="slim"
                 primary={true}
                 onClick={() => this.onApplyFilter()}
                 disabled={loadingRole}

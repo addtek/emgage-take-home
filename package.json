@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --max-old-space-size=4096 node_modules/webpack-dev-server/bin/webpack-dev-server.js --config webpack.config",
     "build-dev": "node --max_old_space_size=4096 node_modules/webpack/bin/webpack.js --display-error-details",
-    "start": "node node_server.js"
+    "start": "node node_server.js",
+    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register './test/**/*.ts'"
   },
   "private": true,
   "author": "Emgage Platform Team",
@@ -70,13 +71,17 @@
     "url-search-params-polyfill": "^7.0.0"
   },
   "devDependencies": {
+    "@babel/register": "^7.12.10",
+    "@elastic/elasticsearch-mock": "^0.3.0",
     "@types/axios": "^0.14.0",
+    "@types/chai": "^4.2.14",
     "@types/classnames": "^0.0.32",
     "@types/enzyme": "^2.8.12",
     "@types/enzyme-adapter-react-16": "^1.0.2",
     "@types/history": "^3.0.1",
     "@types/immutable": "^3.8.7",
     "@types/jest": "^22.2.2",
+    "@types/mocha": "^8.2.0",
     "@types/react": "^16.8.22",
     "@types/react-dom": "^16.8.4",
     "@types/react-redux": "^4.4.40",
@@ -141,6 +146,7 @@
     "style-loader": "^0.19.1",
     "ts-jest": "^20.0.7",
     "ts-loader": "^2.3.2",
+    "ts-node": "^9.1.1",
     "tslint-react": "3.0.0",
     "typescript": "^2.9.2",
     "url-loader": "^0.5.8",

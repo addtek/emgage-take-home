@@ -17,6 +17,7 @@ export interface IBulkActionTypeAction {
 interface IBulkActionType {
   selectedRow: Array<number | string>;
   action: string;
+  performingAction: boolean;
 }
 
 interface IFilterType {
@@ -52,6 +53,7 @@ export interface IRoleListState {
     dropdownEle: IDropdownType;
     // Keys needed for searching specific data
     filterConfig: IFilterType;
+    // Inidicates Roles Defs are loading
     loadingRole: boolean;
     // OPen the edit drawer
     editMember: boolean;

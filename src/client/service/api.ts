@@ -18,6 +18,7 @@ export default class API {
         this.http = axios.create({
             baseURL: 'http://localhost:3000',
             cancelToken: this.cancelToken.token,
+            timeout: 6000,
         });
 
  }
@@ -32,8 +33,8 @@ export default class API {
      * @param error
      * called when an error occurs during the http call
      */
-    public getRoleList(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError) {
-     this.http.get('searchRoles', {params}).then(success, error);
+    public async getRoleList(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError) {
+     await this.http.get('searchRoles', {params}).then(success, error);
     }
 
     /**
@@ -43,18 +44,29 @@ export default class API {
      * @param error
      * called when an error occurs during the http call
      */
-    public updateRoleDef(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError) {
-        this.http.post(`updateRole`, params).then(success, error);
+    public async updateRoleDef(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError) {
+        await this.http.post(`updateRole`, params).then(success, error);
     }
 
     /**
-     * Update Roles Definiton
+     * Delete Roles Definiton
      * @param success
      * called when http request resolves without errors
      * @param error
      * called when an error occurs during the http call
      */
-    public deleteRoleDef(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError) {
-        this.http.post(`deleteRole`, params).then(success, error);
+    public async deleteRoleDef(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError)  {
+        await this.http.post(`deleteRole`, params).then(success, error);
+    }
+
+    /**
+     * Delete Roles Definiton
+     * @param success
+     * called when http request resolves without errors
+     * @param error
+     * called when an error occurs during the http call
+     */
+    public async softDeleteRoleDef(params: {} = {}, success: (res: AxiosResponse) => void, error: (reason: any) => void = this.logError)  {
+        await this.http.post(`softDeleteRole`, params).then(success, error);
     }
 }

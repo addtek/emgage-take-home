@@ -79,6 +79,30 @@ function deleteRole(req, res, next) {
   } catch (err) {
     console.log(err.message);
   }
+
+}
+function softDeleteRole(req, res, next) {
+  this.client = client;
+  this.docIndex = docIndex;
+  try {
+    {
+      this.client
+        .updateByQuery({
+          body: req.body,
+          refresh: true,
+          index: this.docIndex
+        })
+        .then(e => {
+          res.json(e);
+        })
+        .catch(c => {
+          console.log(c);
+          res.json(c);
+        });
+    }
+  } catch (err) {
+    console.log(err.message);
+  }
 }
 
-module.exports = { searchRoles, deleteRole, updateRole };
+module.exports = { searchRoles, deleteRole, updateRole, softDeleteRole };

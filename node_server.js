@@ -28,6 +28,7 @@ function fetch_fn(req, res, next) {
 app.get('/searchRoles', roleDefController.searchRoles);
 app.post('/updateRole', roleDefController.updateRole);
 app.post('/deleteRole', roleDefController.deleteRole);
+app.post('/softDeleteRole', roleDefController.softDeleteRole);
 app.get('/*', function (req, res, next) { fetch_fn(req, res, next); });
 
 var listenPort = process.env.PORT || 3000

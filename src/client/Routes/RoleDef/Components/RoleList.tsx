@@ -52,7 +52,7 @@ let debounceTimeout;
  * @extends React.Component
  */
 class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
-  sortQuery: string = '[{"id":{"order":"desc"}}]';
+  // sortQuery: string = '[{"id":{"order":"desc"}}]';
   /*
     label: Table header lable which will be visible
     key: Match it with json data, this will help to get specific value from the data
@@ -116,6 +116,15 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       header: false,
       onClick: () => this.setBulkAction('delete'),
     },
+    {
+      componentId: 'publish',
+      content: <label>Publish</label>,
+      active: true,
+      disabled: false,
+      divider: true,
+      header: false,
+      onClick: () => this.setBulkAction('publish'),
+    },
   ];
   constructor(props: IRoleListProp) {
     super(props);
@@ -126,6 +135,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       bulkAction: {
         selectedRow: [],
         action: null,
+        performingAction: false,
       },
       callBackAction: undefined,
       callChildCallback: false,
@@ -158,14 +168,19 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
     this.loadRoleDefs(this.roleDefSearchQueryBuilder());
   }
   // make api call
-  loadRoleDefs(query: {}) {
-    API.getRoleList(query, this.onGotRoleDefs, this.onGetRoleDefsError);
+  async loadRoleDefs(query: {}) {
     this.toggleLoading();
+    await API.getRoleList(query, this.onGotRoleDefs, this.onGetRoleDefsError);
   }
   // Callback function for updating roleDefs
   onGotRoleDefs = (res: AxiosResponse<any>) => {
     this.props.initRoleList(res.data.hits.hits.map((role) => role._source));
     this.toggleLoading();
+  }
+  // Callback function for after roleDefs delete action success
+  onRoleDefsDeleted = (res: AxiosResponse<any>) => {
+    this.setState({bulkAction: {selectedRow: [], performingAction: false, action : null}});
+    this.loadRoleDefs(this.roleDefSearchQueryBuilder());
   }
   // Callback function for updating roleDefs
   onGetRoleDefsError = (reason: any) => {
@@ -195,6 +210,8 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
 
   // Apply Bulk action
   applyBulkAction = () => {
+    const {action} = this.state.bulkAction;
+    if (action === 'delete') {
     this.setState({
       showModal: true,
       modalContent: {
@@ -208,17 +225,20 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
         Content: (
         <Column large="4-6">
           <FlexBox direction="Row" justify="Center">
-            <Column large="6-6"><Label>Are You sure you want to delete this Role Definiton? this action is not reversible!</Label></Column>
+            <Column large="6-6"><Label>Are You sure you want to delete this Role Definiton?</Label></Column>
           </FlexBox>
         </Column>),
         Footer: (
           <FlexBox direction="Row" justify="SpaceBetween">
-            <Button componentSize="slim">Cancel</Button>
-            <Button componentSize="slim">Delete</Button>
+            <Button componentSize="slim" onClick={this.closeModal}>Cancel</Button>
+            <Button componentSize="slim" onClick={() => this.deleteOrPublishRoleDef(true)}>Delete</Button>
           </FlexBox>
         ),
       },
     });
+  } else if (action === 'publish') {
+    this.deleteOrPublishRoleDef();
+  }
   }
   // query builder
   roleDefSearchQueryBuilder(): {} {
@@ -273,10 +293,10 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
   // called when search in text field value changes
   onSearchInputChange = (value: string) => {
     this.debounceSearch(() => this.setState(prevState => ({filterConfig: {...prevState.filterConfig, searchKey: value}}),
-    () => {
+    async () => {
         const {searchKey} = this.state.filterConfig;
         if (searchKey.length >= 3 || !searchKey.length) {
-        this.loadRoleDefs(this.roleDefSearchQueryBuilder());
+       await this.loadRoleDefs(this.roleDefSearchQueryBuilder());
         }
       }));
   }
@@ -296,7 +316,7 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
     API.updateRoleDef(
       {
         script : {
-          source: '_ctx._source.entityState = params',
+          source: 'ctx._source.entityState = params',
           params: {
             itemID: 5,
             itemName: 'Published',
@@ -309,10 +329,40 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
       () => null,
     );
   }
-
   // Delete Role
-  deleteRoleDef() {
-    API.deleteRoleDef(this.state.bulkAction.selectedRow, () => null);
+  deleteOrPublishRoleDef = async (remove ?: boolean) => {
+    const deleteSate =  {
+      enumURI: 'EntityState',
+      itemDescription: null,
+      itemID: 7,
+      itemName: 'Deleted',
+      itemURI: 'Deleted',
+    };
+    const publishedSate = {
+      itemID: 5,
+      itemName: 'Published',
+      enumURI: 'EntityState',
+      itemDescription: null,
+      itemURI: 'Published',
+    };
+    this.closeModal();
+    this.setState(prev => ({bulkAction: {...prev.bulkAction, performingAction: true}}));
+    await API.softDeleteRoleDef({
+      query: {
+        bool: {
+          must: {
+          terms: {id: this.state.bulkAction.selectedRow},
+        },
+      },
+      },
+      script: {
+        lang: 'painless',
+        source: 'ctx._source.entityState = params.newState',
+        params: {
+        newState: remove ? deleteSate : publishedSate,
+        },
+      },
+    }, this.onRoleDefsDeleted);
   }
   /**
    * Render the component to the DOM
@@ -437,9 +487,9 @@ class RoleListComponent extends React.Component<IRoleListProp, IRoleListState> {
                 />
             }
             {
-            loadingRole &&
+            (loadingRole || bulkAction.performingAction) &&
               <div className={theme.spinnerContainer}>
-                <DrawerSpinner componentClass={theme.espinner} spinnerText="Loading Roles"  />
+                <DrawerSpinner componentClass={theme.espinner} spinnerText={loadingRole ? 'Loading Roles' : bulkAction.performingAction ? 'Performing Action' : 'Loading'}  />
               </div>
           }
           </div>

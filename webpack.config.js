@@ -117,19 +117,19 @@ module.exports = {
         ],
       },
       {
-          test: /\.svg$/,
-          use: [
-            {
-              loader: 'svg-react-loader',
-            }
-          ]
+        test: /\.svg$/,
+        use: [
+          {
+            loader: 'svg-react-loader',
+          }
+        ]
       },
       {
-          test: /\.(jpe?g|png|gif)$/i,
-          loaders: [
-              'file-loader?hash=sha512&digest=hex&name=[hash].[ext]',
-              'image-webpack-loader?bypassOnDebug=false'
-          ]
+        test: /\.(jpe?g|png|gif)$/i,
+        loaders: [
+            'file-loader?hash=sha512&digest=hex&name=[hash].[ext]',
+            'image-webpack-loader?bypassOnDebug=false'
+        ]
       },
       // {
       //   test: /engage-ui+[/\\].+\.scss/,

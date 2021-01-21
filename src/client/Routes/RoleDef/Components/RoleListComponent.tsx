@@ -23,12 +23,13 @@ import {
 } from '../../../Common/Utilities';
 import { IRoleListState } from './RoleListState';
 import { IRoleListProp } from './RoleListProp';
-import TableStyle from '../../../Theme/Table.scss';
-import CommonStyle from '../../../Theme/ListTheme.scss';
 import { AxiosResponse } from 'axios';
 import Api from '../../../service/api';
 import { AlertDialog } from '../../../Common/Components/AlertDialog';
+import { Status } from 'engage-ui/types/src/components/Badge';
 
+const TableStyle = require('../../../Theme/Table.scss');
+const CommonStyle = require('../../../Theme/ListTheme.scss');
 // initialize Api HTTP client
 const API = Api.getInstance();
 
@@ -74,7 +75,10 @@ export class RoleListComponent extends React.Component<IRoleListProp, IRoleListS
       key: 'entityState',
       style: { width: '120px' },
       sortBy: 'itemID',
-      injectBody: (value: IRoleDef) => <Badge working={value.processing ? true : false} status={AllowedEntityStatusColor[value.processing ? 8 : getBadgeStatus(value)]}>{value.processing ? value.processing : getStatus(value)}</Badge>,
+      injectBody: (value: IRoleDef) => {
+      const status = AllowedEntityStatusColor[value.processing ? 8 : getBadgeStatus(value)] as Status;
+      return <Badge working={value.processing ? true : false} status={status}>{value.processing ? value.processing : getStatus(value)}</Badge>;
+      },
     }, {
       label: 'Type',
       key: 'allowedMemberTypes',

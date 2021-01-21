@@ -8,10 +8,10 @@ import {
 
 import { ESPINNER } from '../../ThemeIdentifiers';
 
-import baseTheme from '../Styles/ESpinner.scss';
+const baseTheme = require('../Styles/ESpinner.scss');
 
-import ESpinner from '../Static/eSpinner.svg';
-import EspinnerOrbit from '../Static/eSpinner-orbit.svg';
+const ESpinner = require('../Static/eSpinner.svg');
+const EspinnerOrbit = require('../Static/eSpinner-orbit.svg');
 
 /*
   Component to show spinner in full page

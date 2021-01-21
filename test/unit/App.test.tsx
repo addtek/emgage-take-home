@@ -1,7 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
-import { act } from 'react-dom/test-utils';
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import { configure, shallow } from 'enzyme';
 
 import {RoleListComponent} from '../../src/client/Routes/RoleDef/Components/RoleListComponent';
@@ -15,6 +13,8 @@ import { IRoleListState } from 'Routes/RoleDef/Components/RoleListState';
 
 configure({ adapter: new Adapter() });
 describe('App Component Testing', () => {
+  const jsdom = require('mocha-jsdom')
+  jsdom();
   let App;
   const DeliciousThemeContext = {
     PButton: require('engage-ui/themes/Delicious/Button.scss'),
@@ -47,7 +47,8 @@ describe('App Component Testing', () => {
        dispatch={roleListProps.dispatch}
      />));
     });
-    expect(App.type).to.be('div');
+    App.SetState({loadingRole: true});
+    expect(App.state().loadingRole).to.equal(true);
 
   });
 });

@@ -7,7 +7,7 @@
     "dev": "node --max-old-space-size=4096 node_modules/webpack-dev-server/bin/webpack-dev-server.js --config webpack.config",
     "build-dev": "node --max_old_space_size=4096 node_modules/webpack/bin/webpack.js --display-error-details",
     "start": "node node_server.js",
-    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register './test/**/*.ts'"
+    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register -r ignore-styles './test/**/*.{js,jsx,ts,tsx}'"
   },
   "private": true,
   "author": "Emgage Platform Team",

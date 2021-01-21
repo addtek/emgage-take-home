@@ -31,11 +31,6 @@ interface IDropdownType {
   filter?: HTMLElement;
   [key: string]: HTMLElement;
 }
-interface IModalContent {
-  Header?: React.ReactNode | React.ReactNode;
-  Footer?: React.ReactNode | React.ReactNode;
-  Content: HTMLElement | React.ReactNode;
-}
 
 interface IHideRowType {
   entityState?: {};
@@ -87,8 +82,6 @@ export interface IRoleListState {
     showAnonymous: boolean;
   // modal active
     showModal: boolean;
-  // Modal content
-    modalContent: IModalContent;
   // Callback action
     callBackAction?(callback: any): void;
 }

@@ -25,13 +25,8 @@ export interface IProps {
   spinnerText?: string;
 }
 
-class DrawerSpinner extends React.Component<IProps, {}> {
-  constructor(props: IProps) {
-    super(props);
-  }
+const DrawerSpinner: React.FC<IProps> = ({ componentClass = '', componentStyle = {}, spinnerText, theme }): React.ReactElement => {
 
-  render() {
-    const { componentClass = '', componentStyle = {}, spinnerText, theme } = this.props;
     const spinnerClass = classNames(
       componentClass,
       theme.eSpinnerContainer,
@@ -47,7 +42,6 @@ class DrawerSpinner extends React.Component<IProps, {}> {
         </FlexBox>
       </div>
     );
-  }
-}
+};
 
 export default themr(ESPINNER, baseTheme)(DrawerSpinner) as ThemedComponentClass<IProps, {}>;
